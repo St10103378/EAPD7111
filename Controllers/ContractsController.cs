@@ -28,19 +28,19 @@ namespace Logistics.Controllers
                 .Include(c => c.Client)
                 .AsQueryable();
 
-            // 🔹 Filter by start date
+            
             if (startDate.HasValue)
             {
                 query = query.Where(c => c.StartDate >= startDate.Value);
             }
 
-            // 🔹 Filter by end date
+           
             if (endDate.HasValue)
             {
                 query = query.Where(c => c.EndDate <= endDate.Value);
             }
 
-            // 🔹 Filter by status (enum-safe)
+          
             if (!string.IsNullOrEmpty(status))
             {
                 if (Enum.TryParse(status, out ContractStatus parsedStatus))
@@ -49,7 +49,7 @@ namespace Logistics.Controllers
                 }
             }
 
-            // 🔹 Optional: filter by client
+           
             if (clientId.HasValue)
             {
                 query = query.Where(c => c.ClientId == clientId.Value);
@@ -257,7 +257,7 @@ namespace Logistics.Controllers
                         return NotFound();
                     }
 
-                    // Keep old file if no new file uploaded
+                    
                     contract.SignedAgreementPath =
                         existingContract.SignedAgreementPath;
 

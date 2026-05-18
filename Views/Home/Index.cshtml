@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="text-center mt-5">
+
+    <h1>Welcome to Tech Moves</h1>
+
+    <p class="lead">Select an option below to continue</p>
+
+    <div class="mt-4">
+
+        <a asp-controller="Clients"
+               asp-action="Index"
+               class="btn btn-primary btn-lg m-2">
+            Clients
+        </a>
+
+        <a asp-controller="Contracts"
+               asp-action="Index"
+               class="btn btn-success btn-lg m-2">
+            Contracts
+        </a>
+
+        <a asp-controller="ServiceRequests"
+               asp-action="Index"
+               class="btn btn-warning btn-lg m-2">
+            Service Requests
+        </a>
+
+    </div>
+
+</div>

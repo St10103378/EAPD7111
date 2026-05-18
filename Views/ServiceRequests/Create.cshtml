@@ -1,0 +1,63 @@
+﻿@model Logistics.Models.ServiceRequest
+
+<h1>Create Service Request</h1>
+
+<form asp-action="Create">
+
+    <div class="mb-3">
+
+        <label asp-for="ContractId"></label>
+
+        <select asp-for="ContractId"
+                asp-items="ViewBag.ContractId"
+                class="form-control">
+        </select>
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="Description"></label>
+
+        <textarea asp-for="Description"
+                      class="form-control">
+        </textarea>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label asp-for="Cost"></label>
+
+            <input asp-for="Cost"
+                   class="form-control" />
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Currency</label>
+
+            <input asp-for="Currency"
+                   class="form-control"
+                   placeholder="USD" />
+
+        </div>
+
+        <div class="mb-3">
+
+            <label asp-for="Status"></label>
+
+            <input asp-for="Status"
+                   class="form-control" />
+
+        </div>
+
+        <button type="submit"
+                class="btn btn-success">
+
+            Save Request
+
+        </button>
+
+    </form>

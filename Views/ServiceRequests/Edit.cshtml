@@ -1,0 +1,69 @@
+﻿@model Logistics.Models.ServiceRequest
+
+<h1>Edit Service Request</h1>
+
+<form asp-action="Edit">
+
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+
+        <label asp-for="ContractId"
+               class="form-label"></label>
+
+        <select asp-for="ContractId"
+                asp-items="ViewBag.ContractId"
+                class="form-control">
+        </select>
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="Description"
+               class="form-label"></label>
+
+        <input asp-for="Description"
+               class="form-control" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="Cost"
+               class="form-label"></label>
+
+        <input asp-for="Cost"
+               class="form-control" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="Currency"
+               class="form-label"></label>
+
+        <input asp-for="Currency"
+               class="form-control" />
+
+    </div>
+    <div class="mb-3">
+
+        <label asp-for="Status"
+               class="form-label"></label>
+
+        <input asp-for="Status"
+               class="form-control" />
+
+    </div>
+    <button type="submit"
+            class="btn btn-success">
+        Update
+    </button>
+
+    <a asp-action="Index"
+           class="btn btn-secondary">
+        Cancel
+    </a>
+
+</form>

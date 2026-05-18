@@ -1,0 +1,47 @@
+﻿@model Logistics.Models.Client
+
+<h1>Create Client</h1>
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+<form asp-action="Create">
+
+    <div class="mb-3">
+
+        <label asp-for="Name"
+               class="form-label"></label>
+
+        <input asp-for="Name"
+               class="form-control" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="ContactDetails"
+               class="form-label"></label>
+
+        <input asp-for="ContactDetails"
+               class="form-control" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label asp-for="Region"
+               class="form-label"></label>
+
+        <input asp-for="Region"
+               class="form-control" />
+
+    </div>
+
+    <button type="submit"
+            class="btn btn-success">
+        Save
+    </button>
+
+</form>

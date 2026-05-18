@@ -1,0 +1,40 @@
+﻿@model Logistics.Models.ServiceRequest
+
+<h1>Service Request Details</h1>
+
+<div class="card p-4">
+
+    <p>
+        <strong>Contract ID:</strong>
+        @Model.ContractId
+    </p>
+
+    <p>
+        <strong>Description:</strong>
+        @Model.Description
+    </p>
+
+    <p>
+        <strong>Cost:</strong>
+        @Model.Cost.ToString("C", new System.Globalization.CultureInfo("en-ZA"))
+    </p>
+
+    <p>
+        <strong>Currency:</strong>
+        @Model.Currency
+    </p>
+
+</div>
+
+<br />
+
+<a asp-action="Edit"
+       asp-route-id="@Model.Id"
+       class="btn btn-warning">
+    Edit
+</a>
+
+<a asp-action="Index"
+       class="btn btn-secondary">
+    Back
+</a>

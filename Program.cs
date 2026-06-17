@@ -8,7 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
-
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5066";
+builder.Services.AddHttpClient<ClientService>(client => client.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<ContractService>(client => client.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<ServiceRequestService>(client => client.BaseAddress = new Uri(apiBaseUrl));
 builder.Services.AddDbContext<GLMSDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));

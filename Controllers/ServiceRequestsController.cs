@@ -1,248 +1,139 @@
-﻿using Logistics.Data;
+﻿
 using Logistics.Enums;
 using Logistics.Models;
 using Logistics.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+namespace Logistics.Controllers;
 
-
-namespace Logistics.Controllers
+public class ServiceRequestsController : Controller
 {
-
-    public class ServiceRequestsController : Controller
+    private readonly ServiceRequestService _serviceRequestService;
+    private readonly ContractService _contractService;
+    private readonly CurrencyService _currencyService;
+    public ServiceRequestsController(
+        ServiceRequestService serviceRequestService,
+        ContractService contractService,
+        CurrencyService currencyService)
     {
-        private readonly GLMSDbContext _context;
-
-        private readonly CurrencyService _currencyService;
-
-        public ServiceRequestsController(
-            GLMSDbContext context,
-            CurrencyService currencyService)
+        _serviceRequestService = serviceRequestService;
+        _contractService = contractService;
+        _currencyService = currencyService;
+    }
+    public async Task<IActionResult> Index()
+    {
+        var requests = await _serviceRequestService.GetServiceRequestsAsync();
+        return View(requests);
+    }
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null) return NotFound();
+        var request = await _serviceRequestService.GetServiceRequestAsync(id.Value);
+        if (request == null) return NotFound();
+        return View(request);
+    }
+    public async Task<IActionResult> Create()
+    {
+        await PopulateContractDropdown();
+        return View();
+    }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(ServiceRequest request)
+    {
+        // Business validation
+        var contract = await _contractService.GetContractAsync(request.ContractId);
+        if (contract == null)
         {
-            _context = context;
-            _currencyService = currencyService;
+            ModelState.AddModelError("", "Contract not found.");
         }
-
-        public async Task<IActionResult> Index()
+        else if (contract.Status == ContractStatus.Expired ||
+                 contract.Status == ContractStatus.OnHold)
         {
-            var requests = await _context.ServiceRequests
-                .Include(s => s.Contract)
-                .ToListAsync();
-
-            return View(requests);
-        }
-
-        public IActionResult Create()
-        {
-            ViewData["ContractId"] =
-                new SelectList(_context.Contracts,
-                    "Id",
-                    "Id");
-
-            return View();
-        }
-        // DETAILS
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var request = await _context.ServiceRequests
-                .Include(s => s.Contract)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (request == null)
-            {
-                return NotFound();
-            }
-
+            ModelState.AddModelError("", "Cannot create request for expired/on-hold contract.");
+            TempData["ErrorMessage"] = "Cannot create request for expired/on-hold contract.";
+            await PopulateContractDropdown();
             return View(request);
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ServiceRequest request)
+        if (ModelState.IsValid)
         {
-            var contract = await _context.Contracts
-                .FindAsync(request.ContractId);
-
-            if (contract == null)
+            try
             {
-                ModelState.AddModelError("",
-                    "Contract not found.");
-            }
-            else if (contract.Status == ContractStatus.Expired ||
-                     contract.Status == ContractStatus.OnHold)
-            {
-                ModelState.AddModelError("",
-                    "Cannot create request for expired/on-hold contract.");
-                TempData["ErrorMessage"] = "Cannot create request for expired/on-hold contract.";
-
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (ModelState.IsValid)
-            {
-                decimal converted =
-                    await _currencyService.ConvertCurrencyAsync(
-                        request.Currency,
-                        "ZAR",
-                        request.Cost);
-
+                decimal converted = await _currencyService.ConvertCurrencyAsync(
+                    request.Currency, "ZAR", request.Cost);
                 request.Cost = converted;
-
-                _context.ServiceRequests.Add(request);
-
-                await _context.SaveChangesAsync();
-
+                await _serviceRequestService.PostServiceRequestAsync(request);
                 return RedirectToAction(nameof(Index));
             }
-
-            return View(request);
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+            }
         }
-        // EDIT GET
-        public async Task<IActionResult> Edit(int? id)
+        await PopulateContractDropdown();
+        return View(request);
+    }
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null) return NotFound();
+        var request = await _serviceRequestService.GetServiceRequestAsync(id.Value);
+        if (request == null) return NotFound();
+        await PopulateContractDropdown(request.ContractId);
+        return View(request);
+    }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, ServiceRequest request)
+    {
+        if (id != request.Id) return NotFound();
+        var contract = await _contractService.GetContractAsync(request.ContractId);
+        if (contract == null)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var request = await _context.ServiceRequests
-                .FindAsync(id);
-
-            if (request == null)
-            {
-                return NotFound();
-            }
-
-            ViewData["ContractId"] =
-                new SelectList(_context.Contracts,
-                    "Id",
-                    "Id",
-                    request.ContractId);
-
-            return View(request);
+            ModelState.AddModelError("", "Contract not found.");
         }
-
-        // EDIT POST
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ServiceRequest request)
+        else if (contract.Status == ContractStatus.Expired ||
+                 contract.Status == ContractStatus.OnHold)
         {
-            if (id != request.Id)
+            ModelState.AddModelError("", "Cannot update request for expired/on-hold contract.");
+            TempData["ErrorMessage"] = "Cannot update request for expired/on-hold contract.";
+        }
+        if (ModelState.IsValid)
+        {
+            try
             {
-                return NotFound();
-            }
-
-            var contract = await _context.Contracts
-                .FindAsync(request.ContractId);
-
-            if (contract == null)
-            {
-                ModelState.AddModelError("",
-                    "Contract not found.");
-            }
-            else if (contract.Status == ContractStatus.Expired ||
-                     contract.Status == ContractStatus.OnHold)
-            {
-                ModelState.AddModelError("",
-                    "Cannot update request for expired/on-hold contract.");
-                TempData["ErrorMessage"] =
-                        "Cannot update request for expired/on-hold contract.";
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    decimal converted =
-                        await _currencyService.ConvertCurrencyAsync(
-                            request.Currency,
-                            "ZAR",
-                            request.Cost);
-
-                    request.Cost = converted;
-
-                    _context.Update(request);
-
-                    await _context.SaveChangesAsync();
-
-                    TempData["ErrorMessage"] =
-                        "Service request updated successfully.";
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ServiceRequestExists(request.Id))
-                    {
-                        return NotFound();
-                    }
-
-                    throw;
-                }
-
+                decimal converted = await _currencyService.ConvertCurrencyAsync(
+                    request.Currency, "ZAR", request.Cost);
+                request.Cost = converted;
+                await _serviceRequestService.UpdateServiceRequestAsync(id, request);
+                TempData["ErrorMessage"] = "Service request updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
-
-            ViewData["ContractId"] =
-                new SelectList(_context.Contracts,
-                    "Id",
-                    "Id",
-                    request.ContractId);
-
-            return View(request);
-        }
-
-        // DELETE GET
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                ModelState.AddModelError("", ex.Message);
             }
-
-            var request = await _context.ServiceRequests
-                .Include(s => s.Contract)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (request == null)
-            {
-                return NotFound();
-            }
-
-            return View(request);
         }
-
-        // DELETE POST
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var request = await _context.ServiceRequests
-                .FindAsync(id);
-
-            if (request != null)
-            {
-                _context.ServiceRequests.Remove(request);
-
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] =
-                    "Service request deleted successfully.";
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool ServiceRequestExists(int id)
-        {
-            return _context.ServiceRequests
-                .Any(e => e.Id == id);
-        }
-    
-}
+        await PopulateContractDropdown(request.ContractId);
+        return View(request);
+    }
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null) return NotFound();
+        var request = await _serviceRequestService.GetServiceRequestAsync(id.Value);
+        if (request == null) return NotFound();
+        return View(request);
+    }
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        await _serviceRequestService.DeleteServiceRequestAsync(id);
+        TempData["SuccessMessage"] = "Service request deleted successfully.";
+        return RedirectToAction(nameof(Index));
+    }
+    private async Task PopulateContractDropdown(int? selectedId = null)
+    {
+        var contracts = await _contractService.GetContractsAsync();
+        ViewData["ContractId"] = new SelectList(contracts, "Id", "Id", selectedId);
+    }
 }
